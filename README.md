@@ -1,6 +1,8 @@
-# second workspace
+# Mindmaker-Driven-by-Natural-Language
 
-该仓库当前主应用位于 `figma/`，是一个基于 Next.js App Router 的社交阅读 MVP。
+这是一个基于自然语言驱动开发的项目仓库。
+
+当前主应用位于 `figma/`，是一个基于 Next.js App Router 的社交阅读 MVP。
 
 ## 目录说明
 
