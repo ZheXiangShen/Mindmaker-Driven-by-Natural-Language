@@ -1,0 +1,158 @@
+# Project: Markdown Personal Knowledge Base (Web)
+
+## Product Goal
+Build a local-first web knowledge base for personal notes in Markdown.
+Focus on MVP speed, reliability, and maintainability over feature breadth.
+
+## MVP Scope (Must Have)
+1. Note CRUD:
+- Create, edit, rename, delete notes.
+- Each note is a `.md` file.
+
+2. Markdown editing and preview:
+- Split view (editor + live preview).
+- Support headings, lists, code blocks, links, images, tables, blockquotes.
+
+3. Organization:
+- Folder tree + note list.
+- Tag support via frontmatter (`tags: []`).
+
+4. Search:
+- Full-text search over title + content.
+- Filter by tags.
+
+5. Local persistence:
+- Persist notes locally (filesystem API preferred; fallback to IndexedDB).
+- Auto-save with visible save status.
+
+6. Basic version safety:
+- Soft delete (trash) and restore.
+- Simple note history (last N snapshots) or at least undo/redo in editor.
+
+7. Import/Export:
+- Import existing `.md` files/folders.
+- Export selected note or full library as zip/markdown bundle.
+
+## Non-MVP (Do Later)
+- Real-time collaboration
+- AI summarization/chat
+- Cross-device sync
+- Advanced graph visualization
+- Plugin marketplace
+
+## Engineering Rules
+- Keep architecture simple and modular.
+- Prefer TypeScript and strict typing.
+- Avoid introducing heavy dependencies without clear MVP value.
+- Write small, testable functions.
+- Keep UI responsive on desktop and mobile.
+
+## Data Model Guidelines
+- Note fields: `id`, `title`, `content`, `tags`, `createdAt`, `updatedAt`, `path`.
+- Use frontmatter only for metadata that users may edit directly.
+- Never silently discard user content.
+
+## UX Rules
+- Core actions should be reachable in <= 2 clicks.
+- Keyboard shortcuts for create/search/save/preview toggle.
+- Show explicit empty states and error states.
+- Confirm destructive actions.
+
+## Performance Baseline
+- Opening 1,000 notes should remain usable.
+- Search feedback should feel near-instant for typical personal datasets.
+- Debounce expensive operations and avoid unnecessary re-renders.
+
+## Code Change Workflow
+When implementing a task:
+1. State assumptions briefly.
+2. Implement the smallest complete slice.
+3. Add/update tests for critical paths.
+4. Run checks (typecheck/lint/tests) before finishing.
+5. Summarize changes and remaining risks.
+
+## Definition of Done (MVP)
+A user can import/create Markdown notes, edit with live preview, organize by folders/tags,
+search quickly, and export all notes without data loss.
+
+## Refactor Cleanup Plan (Pre-Execution Baseline)
+Based on repository scan on 2026-03-09:
+- `UI/src` files: 92
+- Reachable from page/layout/route/test/style entries: 43
+- Unreachable modules: 49 (including `src/app/components/ui/*` and `src/app/components/figma/ImageWithFallback.tsx`)
+- Dependencies currently unused by reachable code: high cleanup potential
+
+Execution priority:
+1. Establish baseline checks and rollback safety.
+2. Remove unreachable/dead modules in small batches.
+3. Remove dependencies not used by live code.
+4. Normalize structure and naming.
+5. Fill documentation gaps.
+
+## Refactor Rules (Must Follow)
+1. Do not mix cleanup and feature work in one PR/commit.
+2. One logical cleanup scope per commit (dead files, deps, naming, docs).
+3. Every cleanup step must keep app behavior unchanged.
+4. If a file cannot be proven live, move to archive first, then delete after verification.
+5. No destructive cleanup without passing post-step checks.
+
+## Dead Code Detection Rules
+Treat a file/module as dead only when all are true:
+- Not reachable from entry points:
+  - `src/app/**/{page,layout,route,error,loading,not-found}.{ts,tsx}`
+  - `src/app/{layout,not-found,global-error}.tsx`
+  - `src/test/setup.ts`
+  - `src/**/*.test.{ts,tsx}`
+  - `src/styles/index.css`
+- No direct or transitive imports from reachable modules.
+- Not referenced by runtime config scripts.
+
+For exported symbols (functions/components):
+- If exported from an unreachable module, mark as dead candidate.
+- If module is reachable, only remove symbol when static checks confirm unused.
+
+## Dependency Cleanup Rules
+Classify dependencies before removal:
+- Class A: not used anywhere in source/config (remove first).
+- Class B: only used by dead/unreachable modules (remove after dead code removal).
+- Class C: required by framework/runtime/tooling (keep).
+
+Guardrails:
+- Keep `react-dom` unless framework-level validation confirms safe removal.
+- Re-run install + typecheck + tests after each dependency batch.
+
+## Structure Optimization Rules
+1. Group by feature domain first, then shared abstractions.
+2. Keep UI primitives either:
+   - actively consumed by live features, or
+   - moved to explicit `archive` namespace.
+3. Split oversized files (>300 lines) by responsibility (state, view, helpers, adapters).
+4. Avoid storing unrelated concerns in `store.tsx`; prefer slices/selectors/actions.
+
+## Naming Consistency Rules
+1. React component files: `PascalCase.tsx`.
+2. Utility/hooks/style files: `kebab-case.ts` / `kebab-case.css`.
+3. Tests: `*.test.ts` or `*.test.tsx` beside target module where possible.
+4. Prefer one import style project-wide:
+   - either alias-first (`@/...`) or
+   - relative-first.
+   Do not mix styles in the same module set.
+5. Documentation filenames should avoid all-caps underscore style unless generated artifacts.
+
+## Documentation Minimum Before Finalizing Cleanup
+Must exist and stay updated:
+- Root project `README.md` (run/build/test, architecture map).
+- `UI/README.md` (app-specific structure and conventions).
+- API reference for `src/app/api/notes/**` (request/response/error shapes).
+- Cleanup changelog section documenting removed files and dependencies.
+
+## Verification Gate (Required per cleanup step)
+After each cleanup batch, run:
+1. Type check (`tsc --noEmit`)
+2. Unit tests (`vitest`)
+3. E2E smoke (at least core notes flow)
+4. Build (`next build`)
+
+If any gate fails:
+- Revert the last cleanup batch only.
+- Record root cause and retry with smaller scope.
